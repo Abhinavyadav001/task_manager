@@ -7,19 +7,26 @@ import { useRouter } from "next/navigation";
 const SignUpPage: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [createUserWithEmailAndPassword,user,loading,error,] = useCreateUserWithEmailAndPassword(auth);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [
+    createUserWithEmailAndPassword,user,loading,error] = useCreateUserWithEmailAndPassword(auth);
   const router = useRouter();
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setErrorMessage("");
     try {
-      const res=await createUserWithEmailAndPassword(email, password);
-      console.log("User created successfully:", user);
-      console.log({res})
+      await createUserWithEmailAndPassword(email, password);
       setEmail("");
       setPassword("");
       router.push("/login");
-    } catch (e) {
+    } 
+    catch (e: any) {
+      if (e.code === "auth/email-already-in-use") {
+        setErrorMessage("Email is already in use. Please try logging in.");
+      } else {
+        setErrorMessage("An error occurred during sign up. Please try again.");
+      }
       console.error("Error during sign up:", e);
     }
   };
@@ -62,12 +69,13 @@ const SignUpPage: React.FC = () => {
         <button
           type="submit"
           className="w-full px-4 py-2 bg-blue-600 text-white font-medium text-sm rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          disabled={loading}
         >
           {loading ? "Signing Up..." : "Sign Up"}
         </button>
-        {error && (
+        {(errorMessage || error) && (
           <p className="mt-4 text-center text-sm text-red-600">
-            {error.message}
+            {errorMessage}
           </p>
         )}
       </form>

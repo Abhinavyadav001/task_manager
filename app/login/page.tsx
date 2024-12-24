@@ -8,7 +8,8 @@ import { useRouter } from "next/navigation";
 const Login: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [signInWithEmailAndPassword, user, loading, error] = useSignInWithEmailAndPassword(auth);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [signInWithEmailAndPassword, user, loading, error] =useSignInWithEmailAndPassword(auth);
   const router = useRouter();
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -19,12 +20,20 @@ const Login: React.FC = () => {
 
   const handleLogin = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
+    setErrorMessage("");
     try {
       await signInWithEmailAndPassword(email, password);
       setEmail("");
       setPassword("");
       router.push("/");
-    } catch (err) {
+    } catch (err: any) {
+      if (err.code === "auth/user-not-found") {
+        setErrorMessage("User doesn't exist. Please sign up first.");
+      } else if (err.code === "auth/wrong-password") {
+        setErrorMessage("Incorrect password. Please try again.");
+      } else {
+        setErrorMessage("An error occurred during login. Please try again.");
+      }
       console.error("Error during login:", err);
     }
   };
@@ -60,7 +69,7 @@ const Login: React.FC = () => {
             htmlFor="password"
             className="block text-sm font-medium text-gray-700"
           >
-          Password
+            Password
           </label>
           <input
             id="password"
@@ -81,9 +90,9 @@ const Login: React.FC = () => {
         >
           {loading ? "Logging in..." : "Login"}
         </button>
-        {error && (
+        {(errorMessage || error) && (
           <p className="mt-4 text-center text-sm text-red-600" aria-live="polite">
-            {error.message}
+            {errorMessage}
           </p>
         )}
         <p className="mt-4 text-center text-sm text-gray-600">
